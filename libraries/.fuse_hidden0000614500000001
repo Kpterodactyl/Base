@@ -1,8 +1,8 @@
 <?php
 
 class Base_point{
-    const MANUAL = 1;  
-    const AUTO = 0;    
+    const MANUAL = 1;  //手动退出
+    const AUTO = 0;    //自动登出
 
     static $WAY = [
         self::MANUAL => '手动登出',
@@ -67,19 +67,8 @@ class Base_point{
 			]);
 		if($point->id){
 			$point->dtend = Date::time();
-            $point->signout_way = Base_point::MANUAL;
 			$point->save();
 		}
 		
 	}
-    //判断退出方式
-    static function judge_signout($user,$browser,$sid){
-        $point = Q("base_point[user=$user][browser=$browser][sid!=$sid][dtend=0]:sort(id DESC)")->current();
-        
-        if($point->id){
-            $point->dtend = time();
-            $point->signout_way = Base_point::AUTO;
-            $login->save();
-        }               
-    }
 }

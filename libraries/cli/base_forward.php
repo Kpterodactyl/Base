@@ -1,8 +1,8 @@
 <?php
 
 class CLI_Base_Forward{
-
 	static function forward(){
+       
         $rpc = new RPC(Config::get('gini.url'));
 
 		$base_point = Q('base_point[dtend>0]');
@@ -21,6 +21,8 @@ class CLI_Base_Forward{
 			$point['dtstart'] = $value->dtstart;
 			$point['dtend'] = $value->dtend;
 			$point['keeptime'] = $value->dtend - $value->dtstart;
+            $point['device'] = self::_getDevice($value->browser);
+            $point['device_type'] = self::_getDeviceType($value->browser);
 			$point['OS_type'] = self::_getOS($value->browser);
 			$point['browser'] = self::_getBrowser($value->browser);
 			$point['version'] = self::_getVersion($value->browser);
@@ -47,7 +49,6 @@ class CLI_Base_Forward{
 			$gapper_id = $user->gapper_id;
 			$user_id = $user->id;
 			$member_type = $user->member_type;
-            error_log("gapper_id=>".$gapper_id);
 			return [
 				'gapper_id' => $gapper_id,
 				'member_type' => $member_type,
@@ -76,7 +77,6 @@ class CLI_Base_Forward{
             $charset = iconv("gbk", "utf-8", $ipadd);
             $a = preg_replace(['/^var[^=]*= /', '/;/'], ['',''], $charset);
             $ipadds= json_decode($a, true);
-            //error_log(print_r($ipadds, true));
             $province = $ipadds[province]; 
             return $province;   
         } else {  
@@ -94,72 +94,79 @@ class CLI_Base_Forward{
             $charset = iconv("gbk", "utf-8", $ipadd);
             $a = preg_replace(['/^var[^=]*= /', '/;/'], ['',''], $charset);
             $ipadds= json_decode($a, true);
-            //error_log(print_r($ipadds, true));
             $city = $ipadds[city]; 
-           // error_log(print_r($city, true));
             return $city;   
         } else {  
             return "city is none";  
         }  
 		
 	}
-    private static function _getOS($browser)  
-    {  	
-        $OS = $browser;
-        if (preg_match('/win/i',$OS)) {  
-            $OS = 'Windows';  
-        }  
-        elseif (preg_match('/mac/i',$OS)) {  
-            $OS = 'MAC';  
-        }  
-        elseif (preg_match('/linux/i',$OS)) {  
-            $OS = 'Linux';  
-        }  
-        elseif (preg_match('/unix/i',$OS)) {  
-            $OS = 'Unix';  
-        }  
-        elseif (preg_match('/bsd/i',$OS)) {  
-            $OS = 'BSD';  
-        }  
-        else {  
-            $OS = 'Other';  
-        }  
+    private static function _getOS($browser) {  	
+        $autoload = ROOT_PATH.'vendor/autoload.php';
+        if(file_exists($autoload)) 
+        require_once($autoload);
+        $agent = new \Jenssegers\Agent\Agent();
+        $agent->setUserAgent($browser);
+        $OS = $agent->platform();
+
         return $OS;     
     }  
-    private static function _getBrowser($browser){
-    	$br = $browser;
-    	if (preg_match('/MSIE/i', $br)) {  
-                $br = 'MSIE';  
-            } elseif (preg_match('/Firefox/i', $br)) {  
-                $br = 'Firefox';  
-            } elseif (preg_match('/Chrome/i', $br)) {  
-                $br = 'Chrome';  
-            } elseif (preg_match('/Safari/i', $br)) {  
-                $br = 'Safari';  
-            } elseif (preg_match('/Opera/i', $br)) {  
-                $br = 'Opera';  
-            } else {  
-                $br = 'Other';  
-            }  
-            return $br;  
+    private static function _getBrowser($browser) {
+        $autoload = ROOT_PATH.'vendor/autoload.php';
+        if(file_exists($autoload)) 
+        require_once($autoload);
+        $agent = new \Jenssegers\Agent\Agent();
+        $agent->setUserAgent($browser);
+        $br = $agent->browser();
+        return $br;  
     }
-    private static function _getVersion($browser){
-        if (empty($browser)){    
-        return 'unknow';
+    //判断设备种类
+    private static function _getDevice($browser) {
+        $autoload = ROOT_PATH.'vendor/autoload.php';
+        if(file_exists($autoload)) 
+        require_once($autoload);
+        $agent = new \Jenssegers\Agent\Agent();
+        $agent->setUserAgent($browser);
+        if($agent->isPhone()) {
+            $device = "Mobile";
         }
-        $agent= $browser;  
-        if (preg_match('/MSIE\s(\d+)\..*/i', $agent, $regs))
-            return $regs[1];
-        elseif (preg_match('/FireFox\/(\d+)\..*/i', $agent, $regs))
-            return $regs[1];
-        elseif (preg_match('/Opera[\s|\/](\d+)\..*/i', $agent, $regs))
-            return $regs[1];
-        elseif (preg_match('/Chrome\/(\d+)\..*/i', $agent, $regs))
-            return $regs[1];
-        elseif ((strpos($agent,'Chrome')==false)&&preg_match('/Safari\/(\d+)\..*$/i', $agent, $regs))
-            return $regs[1];
-        else
-            return 'unknow';
+        elseif($agent->isDesktop()) {
+            $device = "Desktop";
+        }
+        elseif($agent->isRobot()) {
+            $device = "Robot";
+            // this currently only works for major robots like Google, Facebook, Twitter, Bing, Baidu 
+        }
+        else {
+            $device = "Unrecognized";
+        }
+        return $device;  
+    }
+    private static function _getDeviceType($browser) {
+        $autoload = ROOT_PATH.'vendor/autoload.php';
+        if(file_exists($autoload)) 
+        require_once($autoload);
+        $agent = new \Jenssegers\Agent\Agent();
+        $agent->setUserAgent($browser);
+        if($agent->isPhone()) {
+            $type = $agent->device();
+        }
+        else {
+            $type = "immovable device";
+        }
+        error_log($type);
+        return $type;  
+    }
+    private static function _getVersion($browser) {
+   
+        $autoload = ROOT_PATH.'vendor/autoload.php';
+        if(file_exists($autoload)) 
+        require_once($autoload);
+        $agent = new \Jenssegers\Agent\Agent();
+        $agent->setUserAgent($browser);
+        $abrowser = $agent->browser();
+        $version = $agent->version($abrowser);
+        return $version;  
     }
 }
 
