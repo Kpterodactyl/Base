@@ -13,26 +13,32 @@ class Base_Action
 			$base_action->ctime = time();
 			$base_action->base_point = $point;
 			$base_action->module = $module;
-			$base_action->action = $method;
-			
-			if (Base_Action::not_fresh()) {
-
-				if ($base_action->id) {
-					if(time() - $base_action->ctime > 60) {
+			$base_action->action = $method;	
+            if($module = "MODULE_ID") {
+            	error_log("qqq");
+            	return;
+            }
+            error_log("1111111");
+			if (Base_Action::not_fresh()) {  
+			$action = Q("base_action[base_point={$point}][module={$module}][action={$method}]")->current();  	
+				if($action->id){       
+					if(time() - $action->ctime > 60) {
 						$base_action->save();
 					}
-				}else{
+					else {
+						return;
+					}
+				}
+				else {
 					$base_action->save();
 				}
-
 			}
 	    }
 	}
-
 	
 	private static function not_fresh() {
-		
-		if ($_SERVER['PHP_SELF'] == $_SESSION['PHP_SELF']) {			
+		$pageWasRefreshed = isset($_SERVER['HTTP_CACHE_CONTROL']) && $_SERVER['HTTP_CACHE_CONTROL'];
+		if($pageWasRefreshed) {			
 			return FALSE;   
 		}else{
 			return TRUE;
