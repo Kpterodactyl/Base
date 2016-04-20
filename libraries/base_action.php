@@ -14,11 +14,6 @@ class Base_Action
 			$base_action->base_point = $point;
 			$base_action->module = $module;
 			$base_action->action = $method;	
-            if($module = "MODULE_ID") {
-            	error_log("qqq");
-            	return;
-            }
-            error_log("1111111");
 			if (Base_Action::not_fresh()) {  
 			$action = Q("base_action[base_point={$point}][module={$module}][action={$method}]")->current();  	
 				if($action->id){       
